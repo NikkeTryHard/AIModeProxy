@@ -1,0 +1,60 @@
+2025-09-18 10:05:42,335 - INFO - research_agent - --- Starting New Research Task ---
+2025-09-18 10:05:42,336 - INFO - research_agent - Topic: how to go to harvard as a transfer student at uta?
+2025-09-18 10:05:42,336 - INFO - research_agent - Max Iterations: 5
+2025-09-18 10:05:42,336 - INFO - research_agent - --- Research Iteration 1/5 ---
+2025-09-18 10:05:42,336 - DEBUG - research_agent - Sending messages to AI: [
+  {
+    "role": "system",
+    "content": "You are an expert research assistant. Your goal is to gather comprehensive information about the user's topic. Think step-by-step. First, formulate a search query to start. Then, use the `search_google` tool to find information. Analyze the results, and decide if you need more information. If so, formulate a new, more specific query to dig deeper or explore a new angle. When you are confident you have enough information to write a detailed report, respond with the final message 'RESEARCH_COMPLETE' and nothing else."
+  },
+  {
+    "role": "user",
+    "content": "Please research the following topic: how to go to harvard as a transfer student at uta?"
+  }
+]
+2025-09-18 10:05:43,576 - DEBUG - _base_client - Request options: {'method': 'post', 'url': '/chat/completions', 'files': None, 'idempotency_key': 'stainless-python-retry-e724127c-1b52-46d2-ba82-5ccbf7701dae', 'json_data': {'messages': [{'role': 'system', 'content': "You are an expert research assistant. Your goal is to gather comprehensive information about the user's topic. Think step-by-step. First, formulate a search query to start. Then, use the `search_google` tool to find information. Analyze the results, and decide if you need more information. If so, formulate a new, more specific query to dig deeper or explore a new angle. When you are confident you have enough information to write a detailed report, respond with the final message 'RESEARCH_COMPLETE' and nothing else."}, {'role': 'user', 'content': 'Please research the following topic: how to go to harvard as a transfer student at uta?'}], 'model': 'gemini-2.5-pro', 'tool_choice': 'auto', 'tools': [{'type': 'function', 'function': {'name': 'search_google', 'description': 'Searches Google using its AI mode to find information on a given topic or question.', 'parameters': {'type': 'object', 'properties': {'query': {'type': 'string', 'description': 'The specific search query or question.'}}, 'required': ['query']}}}]}}
+2025-09-18 10:05:43,593 - DEBUG - _base_client - Sending HTTP Request: POST http://localhost:2048/v1/chat/completions
+2025-09-18 10:05:43,594 - DEBUG - _trace - connect_tcp.started host='localhost' port=2048 local_address=None timeout=5.0 socket_options=None
+2025-09-18 10:05:43,596 - DEBUG - _trace - connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x107352e10>
+2025-09-18 10:05:43,596 - DEBUG - _trace - send_request_headers.started request=<Request [b'POST']>
+2025-09-18 10:05:43,597 - DEBUG - _trace - send_request_headers.complete
+2025-09-18 10:05:43,597 - DEBUG - _trace - send_request_body.started request=<Request [b'POST']>
+2025-09-18 10:05:43,597 - DEBUG - _trace - send_request_body.complete
+2025-09-18 10:05:43,597 - DEBUG - _trace - receive_response_headers.started request=<Request [b'POST']>
+2025-09-18 10:07:18,088 - DEBUG - _trace - receive_response_headers.complete return_value=(b'HTTP/1.1', 500, b'Internal Server Error', [(b'date', b'Thu, 18 Sep 2025 15:05:43 GMT'), (b'server', b'uvicorn'), (b'content-length', b'311'), (b'content-type', b'application/json')])
+2025-09-18 10:07:18,089 - INFO - _client - HTTP Request: POST http://localhost:2048/v1/chat/completions "HTTP/1.1 500 Internal Server Error"
+2025-09-18 10:07:18,089 - DEBUG - _trace - receive_response_body.started request=<Request [b'POST']>
+2025-09-18 10:07:18,089 - DEBUG - _trace - receive_response_body.complete
+2025-09-18 10:07:18,089 - DEBUG - _trace - response_closed.started
+2025-09-18 10:07:18,089 - DEBUG - _trace - response_closed.complete
+2025-09-18 10:07:18,089 - DEBUG - _base_client - HTTP Response: POST http://localhost:2048/v1/chat/completions "500 Internal Server Error" Headers({'date': 'Thu, 18 Sep 2025 15:05:43 GMT', 'server': 'uvicorn', 'content-length': '311', 'content-type': 'application/json'})
+2025-09-18 10:07:18,089 - DEBUG - _base_client - request_id: None
+2025-09-18 10:07:18,089 - DEBUG - _base_client - Encountered httpx.HTTPStatusError
+Traceback (most recent call last):
+  File "/Users/shokaneko/Desktop/AIModeProxy/venv/lib/python3.11/site-packages/openai/_base_client.py", line 1027, in request
+    response.raise_for_status()
+  File "/Users/shokaneko/Desktop/AIModeProxy/venv/lib/python3.11/site-packages/httpx/_models.py", line 829, in raise_for_status
+    raise HTTPStatusError(message, request=request, response=self)
+httpx.HTTPStatusError: Server error '500 Internal Server Error' for url 'http://localhost:2048/v1/chat/completions'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2025-09-18 10:07:18,091 - DEBUG - _base_client - Retrying due to status code 500
+2025-09-18 10:07:18,091 - DEBUG - _base_client - 2 retries left
+2025-09-18 10:07:18,091 - INFO - _base_client - Retrying request to /chat/completions in 0.437637 seconds
+2025-09-18 10:07:18,534 - DEBUG - _base_client - Request options: {'method': 'post', 'url': '/chat/completions', 'files': None, 'idempotency_key': 'stainless-python-retry-e724127c-1b52-46d2-ba82-5ccbf7701dae', 'json_data': {'messages': [{'role': 'system', 'content': "You are an expert research assistant. Your goal is to gather comprehensive information about the user's topic. Think step-by-step. First, formulate a search query to start. Then, use the `search_google` tool to find information. Analyze the results, and decide if you need more information. If so, formulate a new, more specific query to dig deeper or explore a new angle. When you are confident you have enough information to write a detailed report, respond with the final message 'RESEARCH_COMPLETE' and nothing else."}, {'role': 'user', 'content': 'Please research the following topic: how to go to harvard as a transfer student at uta?'}], 'model': 'gemini-2.5-pro', 'tool_choice': 'auto', 'tools': [{'type': 'function', 'function': {'name': 'search_google', 'description': 'Searches Google using its AI mode to find information on a given topic or question.', 'parameters': {'type': 'object', 'properties': {'query': {'type': 'string', 'description': 'The specific search query or question.'}}, 'required': ['query']}}}]}}
+2025-09-18 10:07:18,536 - DEBUG - _base_client - Sending HTTP Request: POST http://localhost:2048/v1/chat/completions
+2025-09-18 10:07:18,537 - DEBUG - _trace - send_request_headers.started request=<Request [b'POST']>
+2025-09-18 10:07:18,537 - DEBUG - _trace - send_request_headers.complete
+2025-09-18 10:07:18,538 - DEBUG - _trace - send_request_body.started request=<Request [b'POST']>
+2025-09-18 10:07:18,538 - DEBUG - _trace - send_request_body.complete
+2025-09-18 10:07:18,538 - DEBUG - _trace - receive_response_headers.started request=<Request [b'POST']>
+2025-09-18 10:07:33,941 - DEBUG - _trace - receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'date', b'Thu, 18 Sep 2025 15:07:18 GMT'), (b'server', b'uvicorn'), (b'content-length', b'271'), (b'content-type', b'application/json')])
+2025-09-18 10:07:33,941 - INFO - _client - HTTP Request: POST http://localhost:2048/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-18 10:07:33,941 - DEBUG - _trace - receive_response_body.started request=<Request [b'POST']>
+2025-09-18 10:07:33,942 - DEBUG - _trace - receive_response_body.complete
+2025-09-18 10:07:33,942 - DEBUG - _trace - response_closed.started
+2025-09-18 10:07:33,942 - DEBUG - _trace - response_closed.complete
+2025-09-18 10:07:33,942 - DEBUG - _base_client - HTTP Response: POST http://localhost:2048/v1/chat/completions "200 OK" Headers({'date': 'Thu, 18 Sep 2025 15:07:18 GMT', 'server': 'uvicorn', 'content-length': '271', 'content-type': 'application/json'})
+2025-09-18 10:07:33,942 - DEBUG - _base_client - request_id: None
+2025-09-18 10:07:33,945 - WARNING - research_agent - AI did not use a tool or signal completion. Ending research.
+2025-09-18 10:07:33,957 - DEBUG - _trace - close.started
+2025-09-18 10:07:33,962 - DEBUG - _trace - close.complete
