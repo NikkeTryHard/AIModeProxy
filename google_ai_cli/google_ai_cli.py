@@ -31,7 +31,7 @@ def save_conversation(prompt: str, response: str):
         with open(PROMPT_HISTORY_FILE, "a", encoding="utf-8") as f:
             f.write(f"--- Prompt sent at {timestamp} ---\n")
             f.write(f"{prompt}\n\n")
-            f.write(f"--- Response ---\n")
+            f.write("--- Response ---\n")
             f.write(f"{response}\n")
             f.write("="*40 + "\n\n")
         logging.info("Conversation saved to %s", PROMPT_HISTORY_FILE)
@@ -80,7 +80,7 @@ def main():
         ) as browser:
             page = browser.new_page()
             controller = GoogleAIController(page)
-            
+
             if args.command == "prompt":
                 encoded_prompt = quote_plus(args.text)
                 url = GOOGLE_SEARCH_URL.format(query=encoded_prompt)
@@ -88,14 +88,14 @@ def main():
                 page.goto(url, wait_until="domcontentloaded", timeout=60000)
 
                 handle_initial_popups(page)
-                
+
                 logging.info("Waiting for AI response container to appear (max 90s)...")
                 if args.headful:
                     logging.info("If a CAPTCHA appears, please solve it in the browser window.")
-                
+
                 page.wait_for_selector(RESPONSE_CONTAINER_SELECTOR, state="visible", timeout=90000)
                 logging.info("Response container found.")
-                
+
                 controller.wait_for_response_completion()
                 response = controller.extract_response_as_markdown()
                 print(response)
@@ -107,19 +107,22 @@ def main():
                 url = GOOGLE_SEARCH_URL.format(query="start new chat")
                 logging.info("Navigating to default page to start new chat...")
                 page.goto(url, wait_until="domcontentloaded", timeout=60000)
-                
+
                 handle_initial_popups(page)
-                
+
                 logging.info("Waiting for UI to load (max 90s)...")
                 page.wait_for_selector(NEW_CHAT_BUTTON_SELECTOR, state="visible", timeout=90000)
-                
+
                 message = controller.new_chat()
                 print(message)
 
     except PlaywrightTimeoutError:
-        logging.error("Operation timed out. This could be due to a CAPTCHA, slow network, or a page structure change.")
+        logging.error(
+            "Operation timed out. This could be due to a CAPTCHA, "
+            "slow network, or a page structure change."
+        )
         sys.exit(1)
-    except Exception as e:
+    except (IOError, RuntimeError) as e:
         logging.error("A critical error occurred: %s", e, exc_info=True)
         sys.exit(1)
 

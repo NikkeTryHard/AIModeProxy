@@ -65,7 +65,7 @@ class GoogleAIController:
         logging.info("Waiting for response to finish streaming (DOM fallback)...")
         latest_response = self.page.locator(RESPONSE_CONTAINER_SELECTOR).last
         latest_response.scroll_into_view_if_needed(timeout=5000)
-        
+
         last_len = 0
         stable_checks = 0
         max_stable_checks = 6  # Requires 3 seconds of no growth
@@ -110,15 +110,16 @@ class GoogleAIController:
             logging.info("Extracting and parsing the latest response...")
             container = self.page.locator(RESPONSE_CONTAINER_SELECTOR).last
             html_content = container.inner_html()
-            
+
             cleaned_html = re.sub(r'Sv6Kpe\[.*?\]', '', html_content)
-            
+
             soup = BeautifulSoup(cleaned_html, 'lxml')
             markdown_output = []
 
-            for element in soup.select(f"{HEADING_SELECTOR}, {PARAGRAPH_SELECTOR}, {LIST_SELECTOR}"):
-                class_attrs = element.get('class', [])
-                
+            selectors = f"{HEADING_SELECTOR}, {PARAGRAPH_SELECTOR}, {LIST_SELECTOR}"
+            for element in soup.select(selectors):
+                class_attrs = element.get('class') or []
+
                 if HEADING_SELECTOR.strip('.') in class_attrs:
                     markdown_output.append(f"\n### {element.get_text(strip=True)}\n")
                 elif PARAGRAPH_SELECTOR.strip('.') in class_attrs:
@@ -129,19 +130,22 @@ class GoogleAIController:
                         item_text = self._parse_element_to_markdown(li).strip()
                         markdown_output.append(f"* {item_text}")
                     markdown_output.append("")
-            
+
             parsed_response = "\n".join(markdown_output).strip()
             if not parsed_response:
-                logging.warning("Markdown parsing resulted in empty content. Falling back to plain text.")
+                logging.warning(
+                    "Markdown parsing resulted in empty content. "
+                    "Falling back to plain text."
+                )
                 return container.inner_text()
 
             logging.info("Parsing successful.")
             return parsed_response
-        except Exception as e:
+        except (AttributeError, TypeError, IndexError) as e:
             logging.error("Failed to parse response HTML: %s. Falling back to plain text.", e)
             try:
                 return self.page.locator(RESPONSE_CONTAINER_SELECTOR).last.inner_text()
-            except Exception as fallback_e:
+            except (PlaywrightTimeoutError, AttributeError) as fallback_e:
                 logging.error("Fallback text extraction also failed: %s", fallback_e)
                 return "Error: Could not extract response."
 
