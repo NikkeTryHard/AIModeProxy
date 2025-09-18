@@ -23,38 +23,68 @@ class GoogleAIController:
 
     def __init__(self, page: Page):
         self.page = page
+        self._last_network_activity = 0
+        self._streaming_detected = False
 
-    def wait_for_response_stabilization(self):
-        """Waits for the text content of the last response to stop growing."""
-        logging.info("Waiting for response to finish streaming...")
-        try:
-            latest_response = self.page.locator(RESPONSE_CONTAINER_SELECTOR).last
-            latest_response.scroll_into_view_if_needed(timeout=5000)
-            
-            last_len = 0
-            stable_checks = 0
-            max_stable_checks = 6  # Requires 3 seconds of no growth (6 checks * 0.5s)
+    def _response_handler(self, response):
+        """Callback to track network responses."""
+        if "/async/" in response.url:
+            logging.debug("Network activity detected: %s", response.url)
+            self._streaming_detected = True
+            self._last_network_activity = time.time()
 
-            for i in range(240):  # Max wait of 120 seconds
-                current_text = latest_response.inner_text(timeout=5000)
-                current_len = len(current_text)
-                logging.debug("Stabilization check %d: length=%d, last_len=%d, stable_checks=%d",
-                              i + 1, current_len, last_len, stable_checks)
+    def wait_for_response_completion(self, timeout=90):
+        """Waits for the AI response by monitoring network inactivity."""
+        logging.info("Waiting for response stream to complete...")
+        self.page.on("response", self._response_handler)
+        self._last_network_activity = time.time()
+        self._streaming_detected = False
+        start_time = time.time()
 
-                if current_len > 0 and current_len == last_len:
-                    stable_checks += 1
-                    if stable_checks >= max_stable_checks:
-                        logging.info("Response content stabilized after %.1f seconds.", i * 0.5)
-                        return
-                else:
-                    stable_checks = 0
-                last_len = current_len
-                time.sleep(0.5)
-            
-            logging.warning("Wait for stabilization timed out. Response may be incomplete.")
-        except PlaywrightTimeoutError:
-            logging.error("Could not find response container during stabilization check.")
-            raise
+        # First, wait for the streaming to begin.
+        while not self._streaming_detected:
+            if time.time() - start_time > 20:  # 20s timeout to start
+                self.page.remove_listener("response", self._response_handler)
+                logging.warning("Network stream never started. Falling back to DOM stabilization.")
+                self.wait_for_dom_stabilization()
+                return
+            self.page.wait_for_timeout(100) # Check every 100ms
+
+        # Once streaming starts, wait for it to become idle.
+        while time.time() - self._last_network_activity < 3.0:  # 3s of inactivity
+            if time.time() - start_time > timeout:
+                logging.warning("Network monitoring timed out after %d seconds.", timeout)
+                break
+            self.page.wait_for_timeout(100)
+
+        self.page.remove_listener("response", self._response_handler)
+        logging.info("Network activity has stabilized.")
+
+    def wait_for_dom_stabilization(self):
+        """Fallback: Waits for the text content of the last response to stop growing."""
+        logging.info("Waiting for response to finish streaming (DOM fallback)...")
+        latest_response = self.page.locator(RESPONSE_CONTAINER_SELECTOR).last
+        latest_response.scroll_into_view_if_needed(timeout=5000)
+        
+        last_len = 0
+        stable_checks = 0
+        max_stable_checks = 6  # Requires 3 seconds of no growth
+
+        for i in range(240):
+            current_text = latest_response.inner_text(timeout=5000)
+            current_len = len(current_text)
+            logging.debug("DOM check %d: len=%d, last_len=%d, stable=%d",
+                          i + 1, current_len, last_len, stable_checks)
+            if current_len > 0 and current_len == last_len:
+                stable_checks += 1
+                if stable_checks >= max_stable_checks:
+                    logging.info("DOM content stabilized after %.1f seconds.", i * 0.5)
+                    return
+            else:
+                stable_checks = 0
+            last_len = current_len
+            time.sleep(0.5)
+        logging.warning("DOM stabilization timed out. Response may be incomplete.")
 
     def _parse_element_to_markdown(self, element) -> str:
         """Recursively parses a BeautifulSoup element into a Markdown string."""
@@ -81,7 +111,6 @@ class GoogleAIController:
             container = self.page.locator(RESPONSE_CONTAINER_SELECTOR).last
             html_content = container.inner_html()
             
-            # Clean out Google's internal markers before parsing
             cleaned_html = re.sub(r'Sv6Kpe\[.*?\]', '', html_content)
             
             soup = BeautifulSoup(cleaned_html, 'lxml')

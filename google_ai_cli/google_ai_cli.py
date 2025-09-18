@@ -20,8 +20,7 @@ from config import (
     PROMPT_HISTORY_FILE,
     SESSION_DIR,
     RESPONSE_CONTAINER_SELECTOR,
-    NEW_CHAT_BUTTON_SELECTOR,
-    INPUT_TEXTAREA_SELECTOR
+    NEW_CHAT_BUTTON_SELECTOR
 )
 
 def save_conversation(prompt: str, response: str):
@@ -97,7 +96,7 @@ def main():
                 page.wait_for_selector(RESPONSE_CONTAINER_SELECTOR, state="visible", timeout=90000)
                 logging.info("Response container found.")
                 
-                controller.wait_for_response_stabilization()
+                controller.wait_for_response_completion()
                 response = controller.extract_response_as_markdown()
                 print(response)
 
