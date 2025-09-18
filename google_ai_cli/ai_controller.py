@@ -3,6 +3,7 @@
 Contains the GoogleAIController class for browser automation and response parsing.
 """
 import logging
+import re
 import time
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
 from bs4 import BeautifulSoup
@@ -24,24 +25,30 @@ class GoogleAIController:
         self.page = page
 
     def wait_for_response_stabilization(self):
-        """Waits for the text content of the last response to stop changing."""
+        """Waits for the text content of the last response to stop growing."""
         logging.info("Waiting for response to finish streaming...")
         try:
             latest_response = self.page.locator(RESPONSE_CONTAINER_SELECTOR).last
-            last_text = ""
+            latest_response.scroll_into_view_if_needed(timeout=5000)
+            
+            last_len = 0
             stable_checks = 0
-            max_stable_checks = 4  # Requires 2 seconds of no content changes
+            max_stable_checks = 6  # Requires 3 seconds of no growth (6 checks * 0.5s)
 
             for i in range(240):  # Max wait of 120 seconds
                 current_text = latest_response.inner_text(timeout=5000)
-                if current_text and current_text == last_text:
+                current_len = len(current_text)
+                logging.debug("Stabilization check %d: length=%d, last_len=%d, stable_checks=%d",
+                              i + 1, current_len, last_len, stable_checks)
+
+                if current_len > 0 and current_len == last_len:
                     stable_checks += 1
                     if stable_checks >= max_stable_checks:
                         logging.info("Response content stabilized after %.1f seconds.", i * 0.5)
                         return
                 else:
                     stable_checks = 0
-                last_text = current_text
+                last_len = current_len
                 time.sleep(0.5)
             
             logging.warning("Wait for stabilization timed out. Response may be incomplete.")
@@ -61,7 +68,8 @@ class GoogleAIController:
                 elif child.name in ['i', 'em']:
                     content += f"*{child.get_text(strip=True)}*"
                 elif child.name == 'a':
-                    content += f"[{child.get_text(strip=True)}]({child.get('href', '')})"
+                    href = child.get('href', '')
+                    content += f"[{child.get_text(strip=True)}]({href})"
                 else:
                     content += self._parse_element_to_markdown(child)
         return content
@@ -73,10 +81,13 @@ class GoogleAIController:
             container = self.page.locator(RESPONSE_CONTAINER_SELECTOR).last
             html_content = container.inner_html()
             
-            soup = BeautifulSoup(html_content, 'lxml')
+            # Clean out Google's internal markers before parsing
+            cleaned_html = re.sub(r'Sv6Kpe\[.*?\]', '', html_content)
+            
+            soup = BeautifulSoup(cleaned_html, 'lxml')
             markdown_output = []
 
-            for element in soup.find_all(['div', 'ul'], recursive=False):
+            for element in soup.select(f"{HEADING_SELECTOR}, {PARAGRAPH_SELECTOR}, {LIST_SELECTOR}"):
                 class_attrs = element.get('class', [])
                 
                 if HEADING_SELECTOR.strip('.') in class_attrs:
@@ -91,10 +102,14 @@ class GoogleAIController:
                     markdown_output.append("")
             
             parsed_response = "\n".join(markdown_output).strip()
+            if not parsed_response:
+                logging.warning("Markdown parsing resulted in empty content. Falling back to plain text.")
+                return container.inner_text()
+
             logging.info("Parsing successful.")
             return parsed_response
-        except (AttributeError, IndexError) as e:
-            logging.error("Failed to parse response HTML: %s", e)
+        except Exception as e:
+            logging.error("Failed to parse response HTML: %s. Falling back to plain text.", e)
             try:
                 return self.page.locator(RESPONSE_CONTAINER_SELECTOR).last.inner_text()
             except Exception as fallback_e:
